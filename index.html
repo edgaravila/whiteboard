@@ -42,9 +42,7 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-</script>
 
-<script>
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
@@ -73,7 +71,7 @@ function drawBoard() {
   drawings.forEach(d => {
     ctx.strokeStyle = d.color;
     ctx.lineWidth = d.size;
-    ctx.globalAlpha = d.alpha || 1.0;
+
     if (d.tool === 'spray') {
       d.path.forEach(p => {
         if (!p.sprayOffsets) {
@@ -92,6 +90,7 @@ function drawBoard() {
       });
     } else {
       ctx.beginPath();
+      ctx.globalAlpha = d.alpha || 1.0;
       ctx.moveTo(d.path[0].x, d.path[0].y);
       d.path.forEach(p => ctx.lineTo(p.x, p.y));
       ctx.stroke();
@@ -120,6 +119,7 @@ canvas.addEventListener('mousemove', e => {
   const x = (e.clientX - panX) / scale;
   const y = (e.clientY - panY) / scale;
   const currentPath = drawings[drawings.length - 1];
+
   addPointToCurrentPath(x, y, currentPath);
   drawBoard();
 });
@@ -135,6 +135,7 @@ canvas.addEventListener('mousedown', e => {
   isDrawing = true;
   const x = (e.clientX - panX) / scale;
   const y = (e.clientY - panY) / scale;
+
   let size = parseInt(sizePicker.value) / scale;
   let alpha = 1.0;
 
@@ -156,6 +157,7 @@ canvas.addEventListener('mousedown', e => {
 
   addPointToCurrentPath(x, y, newPath);
   drawings.push(newPath);
+
   drawBoard();
 });
 
@@ -169,6 +171,7 @@ canvas.addEventListener('wheel', e => {
   e.preventDefault();
   const zoom = e.deltaY < 0 ? 1.1 : 0.9;
   const minScale = 1;
+
   let newScale = scale * zoom;
   if (newScale < minScale && zoom < 1) return;
 
@@ -182,6 +185,11 @@ canvas.addEventListener('wheel', e => {
   drawBoard();
 });
 
+const params = new URLSearchParams(window.location.search);
+scale = parseFloat(params.get("scale")) || 1;
+panX = parseFloat(params.get("panX")) || 0;
+panY = parseFloat(params.get("panY")) || 0;
+
 db.ref('whiteboard/drawings').on('value', snapshot => {
   const data = snapshot.val();
   if (data) {
@@ -192,6 +200,5 @@ db.ref('whiteboard/drawings').on('value', snapshot => {
 
 drawBoard();
 </script>
-
 </body>
 </html>
