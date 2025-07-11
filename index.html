@@ -24,7 +24,6 @@
     <option value="marker">Marker</option>
     <option value="spray">Spray</option>
   </select>
-  <button onclick="copyViewLink()">Copy Link</button>
 </div>
 
 <canvas id="canvas"></canvas>
@@ -33,19 +32,17 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
 <script>
 const firebaseConfig = {
-  apiKey: "AIzaSyACm_A3oqFkC4ElbzqCmfIXmLVb1WRk3dE",
-  authDomain: "whiteboard-57d91.firebaseapp.com",
-  databaseURL: "https://whiteboard-57d91-default-rtdb.firebaseio.com",
-  projectId: "whiteboard-57d91",
-  storageBucket: "whiteboard-57d91.firebasestorage.app",
-  messagingSenderId: "870197718231",
-  appId: "1:870197718231:web:3a268df7cad6e33bb41492"
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_DOMINIO.firebaseapp.com",
+  databaseURL: "https://TU_DOMINIO.firebaseio.com",
+  projectId: "TU_ID",
+  storageBucket: "TU_DOMINIO.appspot.com",
+  messagingSenderId: "XXX",
+  appId: "XXX"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-</script>
 
-<script>
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
@@ -114,7 +111,6 @@ canvas.addEventListener('mousemove', e => {
     panX = e.clientX - startX;
     panY = e.clientY - startY;
     drawBoard();
-    db.ref('whiteboard/drawings').set(drawings);
     return;
   }
 
@@ -126,7 +122,6 @@ canvas.addEventListener('mousemove', e => {
 
   addPointToCurrentPath(x, y, currentPath);
   drawBoard();
-  db.ref('whiteboard/drawings').set(drawings);
 });
 
 canvas.addEventListener('mousedown', e => {
@@ -164,10 +159,10 @@ canvas.addEventListener('mousedown', e => {
   drawings.push(newPath);
 
   drawBoard();
-  db.ref('whiteboard/drawings').set(drawings);
 });
 
 canvas.addEventListener('mouseup', () => {
+  db.ref('whiteboard/drawings').set(drawings);
   isDrawing = false;
   isPanning = false;
 });
@@ -176,7 +171,6 @@ canvas.addEventListener('wheel', e => {
   e.preventDefault();
   const zoom = e.deltaY < 0 ? 1.1 : 0.9;
   const minScale = 1;
-  const resetThreshold = 1000000000;
 
   let newScale = scale * zoom;
   if (newScale < minScale && zoom < 1) return;
@@ -190,16 +184,6 @@ canvas.addEventListener('wheel', e => {
 
   drawBoard();
 });
-
-function copyViewLink() {
-  const url = new URL(window.location.href);
-  url.searchParams.set("scale", scale);
-  url.searchParams.set("panX", panX);
-  url.searchParams.set("panY", panY);
-  navigator.clipboard.writeText(url.toString())
-    .then(() => alert("Link copied to clipboard!"))
-    .catch(() => alert("Failed to copy link"));
-}
 
 const params = new URLSearchParams(window.location.search);
 scale = parseFloat(params.get("scale")) || 1;
