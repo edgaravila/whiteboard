@@ -24,6 +24,7 @@
     <option value="marker">Marker</option>
     <option value="spray">Spray</option>
   </select>
+  <button id="shareButton">Share View</button>
 </div>
 
 <canvas id="canvas"></canvas>
@@ -199,6 +200,13 @@ db.ref('whiteboard/drawings').on('value', snapshot => {
 });
 
 drawBoard();
+
+document.getElementById('shareButton').addEventListener('click', () => {
+  const url = `${window.location.origin}${window.location.pathname}?scale=${scale}&panX=${panX}&panY=${panY}`;
+  navigator.clipboard.writeText(url).then(() => {
+    alert("Link copied to clipboard! Share it with others.");
+  });
+});
 </script>
 </body>
 </html>
