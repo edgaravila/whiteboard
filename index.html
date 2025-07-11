@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Infinite Whiteboard</title>
+<title>Whiteboard Realtime</title>
 <style>
   body { margin: 0; overflow: hidden; }
   .toolbar {
@@ -14,6 +14,7 @@
 </style>
 </head>
 <body>
+
 <div class="toolbar">
   <div>Scale: <span id="scaleDisplay">1</span>x</div>
   <input type="color" id="colorPicker" value="#000000">
@@ -25,169 +26,34 @@
   </select>
   <button onclick="copyViewLink()">Copy Link</button>
 </div>
+
 <canvas id="canvas"></canvas>
 
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
 <script>
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-let scale = 1;
-let globalOffsetX = 0;
-let globalOffsetY = 0;
-let panX = 0;
-let panY = 0;
-let isDrawing = false;
-let isPanning = false;
-let startX = 0;
-let startY = 0;
-let drawings = [];
-
-const colorPicker = document.getElementById('colorPicker');
-const sizePicker = document.getElementById('sizePicker');
-const toolPicker = document.getElementById('toolPicker');
-
-function drawBoard() {
-  ctx.save();
-  ctx.setTransform(scale, 0, 0, scale, panX, panY);
-  ctx.clearRect(-panX / scale, -panY / scale, canvas.width / scale, canvas.height / scale);
-
-  drawings.forEach(d => {
-    ctx.strokeStyle = d.color;
-    ctx.lineWidth = d.size;
-
-    if (d.tool === 'spray') {
-      d.path.forEach(p => {
-        if (!p.sprayOffsets) {
-          p.sprayOffsets = Array.from({ length: 10 }, () => ({
-            x: (Math.random() - 0.5) * 20 / scale,
-            y: (Math.random() - 0.5) * 20 / scale
-          }));
-        }
-        ctx.fillStyle = d.color;
-        ctx.globalAlpha = d.alpha || 0.3;
-        p.sprayOffsets.forEach(offset => {
-          ctx.beginPath();
-          ctx.arc(p.x + offset.x, p.y + offset.y, 2 / scale, 0, Math.PI * 2);
-          ctx.fill();
-        });
-      });
-    } else {
-      ctx.beginPath();
-      ctx.globalAlpha = d.alpha || 1.0;
-      ctx.moveTo(d.path[0].x, d.path[0].y);
-      d.path.forEach(p => ctx.lineTo(p.x, p.y));
-      ctx.stroke();
-    }
-  });
-
-  ctx.globalAlpha = 1.0;
-  ctx.restore();
-  document.getElementById('scaleDisplay').textContent = scale.toFixed(2);
-}
-
-function addPointToCurrentPath(x, y, currentPath) {
-  currentPath.path.push({ x, y });
-}
-
-canvas.addEventListener('mousemove', e => {
-  if (isPanning) {
-    panX = e.clientX - startX;
-    panY = e.clientY - startY;
-    drawBoard();
-    return;
-  }
-
-  if (!isDrawing || drawings.length === 0) return;
-
-  const x = (e.clientX - panX) / scale;
-  const y = (e.clientY - panY) / scale;
-  const currentPath = drawings[drawings.length - 1];
-
-  addPointToCurrentPath(x, y, currentPath);
-  drawBoard();
-});
-
-canvas.addEventListener('mousedown', e => {
-  if (e.button === 1) {
-    isPanning = true;
-    startX = e.clientX - panX;
-    startY = e.clientY - panY;
-    return;
-  }
-
-  isDrawing = true;
-  const x = (e.clientX - panX) / scale;
-  const y = (e.clientY - panY) / scale;
-
-  let size = parseInt(sizePicker.value) / scale;
-  let alpha = 1.0;
-
-  if (toolPicker.value === 'marker') {
-    size *= 10;
-    alpha = 0.25;
-  } else if (toolPicker.value === 'spray') {
-    alpha = 0.3;
-  }
-
-  const newPath = {
-    type: 'path',
-    path: [],
-    color: colorPicker.value,
-    size,
-    tool: toolPicker.value,
-    alpha
-  };
-
-  addPointToCurrentPath(x, y, newPath);
-  drawings.push(newPath);
-
-  drawBoard();
-});
-
-canvas.addEventListener('mouseup', () => {
-  isDrawing = false;
-  isPanning = false;
-});
-
-canvas.addEventListener('wheel', e => {
-  e.preventDefault();
-  const zoom = e.deltaY < 0 ? 1.1 : 0.9;
-  const minScale = 1;
-  const resetThreshold = 1000000000;
-
-  let newScale = scale * zoom;
-  if (newScale < minScale && zoom < 1) return;
-
-  const mouseX = (e.clientX - panX) / scale + globalOffsetX;
-  const mouseY = (e.clientY - panY) / scale + globalOffsetY;
-
-  
-
-  scale = newScale;
-  panX = e.clientX - (mouseX - globalOffsetX) * scale;
-  panY = e.clientY - (mouseY - globalOffsetY) * scale;
-
-  drawBoard();
-});
-
-function copyViewLink() {
-  const url = new URL(window.location.href);
-  url.searchParams.set("scale", scale);
-  url.searchParams.set("panX", panX);
-  url.searchParams.set("panY", panY);
-  navigator.clipboard.writeText(url.toString())
-    .then(() => alert("Link copied to clipboard!"))
-    .catch(() => alert("Failed to copy link"));
-}
-
-const params = new URLSearchParams(window.location.search);
-scale = parseFloat(params.get("scale")) || 1;
-panX = parseFloat(params.get("panX")) || 0;
-panY = parseFloat(params.get("panY")) || 0;
-
-drawBoard();
+// Configuración de tu proyecto Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyACm_A3oqFkC4ElbzqCmfIXmLVb1WRk3dE",
+  authDomain: "whiteboard-57d91.firebaseapp.com",
+  databaseURL: "https://whiteboard-57d91-default-rtdb.firebaseio.com",
+  projectId: "whiteboard-57d91",
+  storageBucket: "whiteboard-57d91.firebasestorage.app",
+  messagingSenderId: "870197718231",
+  appId: "1:870197718231:web:3a268df7cad6e33bb41492"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 </script>
+
+<script>
+// (Aquí va tu código JavaScript tal como lo pegaste, con el canvas, eventos y drawBoard)
+
+  // ← Copia desde tu documento abierto en el canvas todo el bloque
+  //     que empieza en: const canvas = document.getElementById('canvas');
+  //     y termina en: drawBoard();
+
+</script>
+
 </body>
 </html>
